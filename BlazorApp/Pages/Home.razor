@@ -1,0 +1,95 @@
+﻿@page "/"
+@using System.Text
+@using System.Net.Http
+@using Newtonsoft.Json
+@using System.Runtime.InteropServices;
+<PageTitle>Chatbot</PageTitle>
+<script>
+    function printToConsole(message) {
+        console.log(message);
+    }
+</script>
+<div class="container">
+    <div class="row">
+        <div class="col-4">
+            <p>@testing</p>
+        </div>
+        <div class="col-4">
+            <div class="messages">
+                @for (int i = 0; i < messages.Count; i++)
+                {
+                    @if (i % 2 == 0)
+                    {
+                        <div class="question">@messages[i]</div>
+                    } else
+                    {
+                        <div class="response">@messages[i]</div>
+                    }
+                }
+            </div>
+            <div class="textMessage">
+                <input @bind="message" / >
+                <button @onclick="ClassifyAndRespond">Classify and Respond</button>
+            </div>
+        </div>
+        <div class="col-4">
+        </div>
+    </div>
+</div>
+
+    
+
+@code{
+
+    @inject IJSRuntime JSRuntime
+    public async Task printToConsole(string message){
+        await JSRuntime.InvokeVoidAsync("printToConsole", message);
+    }
+
+    public string ?message;
+    public string ?testing;
+    public List<string> messages = new();
+    private static HttpClient Http = new HttpClient();
+
+    public async Task ClassifyAndRespond()
+    {
+        if (string.IsNullOrEmpty(message)) return;
+
+        var jsonContent = new
+        {
+            text = message
+        };
+
+        var responseContent = await Http.PostAsync("http://127.0.0.1:8000/classify", 
+            new StringContent(JsonConvert.SerializeObject(jsonContent), Encoding.UTF8, "application/json"));
+        
+        var resContext = await responseContent.Content.ReadAsStringAsync();
+
+       
+        var data = JsonConvert.DeserializeObject<dynamic>(resContext);
+
+
+        if (data?.predicted_class != null)
+        {
+            messages.Add(data.text?.ToString() ?? "No text received" );
+
+            if (data.predicted_class == "ham")
+            {
+                // If the message is classified as 'ham', respond with OpenAI
+                messages.Add(data.openai_response?.ToString() ?? "No response from AI");
+            }
+            else
+            {
+                // If the message is classified as 'spam'
+                messages.Add("This message is classified as spam.");
+            }
+        }
+        else
+        {
+            messages.Add("No response received from the classification model.");
+        }
+
+        message = string.Empty;
+        StateHasChanged();
+    }
+}

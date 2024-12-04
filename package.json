@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "fastapi": "^0.0.8"
+  },
+  "scripts": {
+  "start": "concurrently \"dotnet run --project ./BlazorApp\" \"PYTHONPATH=$(pwd) uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000\""
+},
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
