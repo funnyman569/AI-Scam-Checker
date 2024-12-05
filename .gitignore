@@ -4,3 +4,5 @@ results/
 myenv/
 BlazorApp/bin/
 BlazorApp/obj/
+backend/__pycache__/
+
